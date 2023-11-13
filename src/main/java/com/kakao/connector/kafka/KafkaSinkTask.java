@@ -145,7 +145,7 @@ public class KafkaSinkTask extends SinkTask {
     private String parsingMessageKey(String value) {
         try {
             StringBuilder messageKey = new StringBuilder();
-            List<String> fields = Arrays.asList(keyParsingField.split(","));
+            String[] fields = keyParsingField.split(",");
             for (String field : fields) {
                 messageKey.append(JsonPath.read(value, field).toString());
             }
