@@ -85,36 +85,30 @@ public class KafkaSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> records) {
-        if (samplingEnabled) {
-            for (SinkRecord record : records) {
-                if (record.value() != null) {
-                    try {
-                        String value = record.value().toString();
-                        boolean samplingCondition = Math.random() < samplingPercentage;
-                        if (samplingCondition
-                                && isFilteringMatch(value)
-                        ) {
+        for (SinkRecord record : records) {
+            if (record.value() != null) {
+                try {
+                    String value = record.value().toString();
+                    if (!samplingEnabled && isFilteringMatch(value)) {
+                        sendRecord(value);
+                    } else if (samplingEnabled) {
+                        if (shouldSendRecord(value)) {
                             sendRecord(value);
                         }
-                    } catch (Exception e) {
-                        log.error(e.getMessage() + " / " + connectorName, e);
                     }
-                }
-            }
-        } else {
-            for (SinkRecord record : records) {
-                if (record.value() != null) {
-                    try {
-                        String value = record.value().toString();
-                        if (isFilteringMatch(value)) {
-                            sendRecord(value);
-                        }
-                    } catch (Exception e) {
-                        log.error(e.getMessage() + " / " + connectorName, e);
-                    }
+                } catch (Exception e) {
+                    logError(e);
                 }
             }
         }
+    }
+
+    private boolean shouldSendRecord(String value) {
+        return Math.random() < samplingPercentage && isFilteringMatch(value);
+    }
+
+    private void logError(Exception e) {
+        log.error(e.getMessage() + " / " + connectorName, e);
     }
 
     private void sendRecord(String value) {
@@ -143,7 +137,7 @@ public class KafkaSinkTask extends SinkTask {
             LocalDateTime dateTime = LocalDateTime.parse(timestampFieldValue, formatter);
             return Timestamp.valueOf(dateTime).getTime();
         } catch (Exception e) {
-            log.error(e.getMessage() + " / " + connectorName, e);
+            logError(e);
             return System.currentTimeMillis();
         }
     }
@@ -157,7 +151,7 @@ public class KafkaSinkTask extends SinkTask {
             }
             return messageKey.toString();
         } catch (Exception e) {
-            log.error(e.getMessage() + " / " + connectorName, e);
+            logError(e);
             return null;
         }
     }
