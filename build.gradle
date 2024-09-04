@@ -9,9 +9,9 @@ repositories {
 }
 
 ext {
-    set('connectApi', '2.8.0')
-    set('slf4jSimple', '1.7.30')
-    set('jsonPath', '2.6.0')
+    set('connectApi', '3.8.0')
+    set('slf4jSimple', '2.0.16')
+    set('jsonPath', '2.9.0')
 }
 
 dependencies {

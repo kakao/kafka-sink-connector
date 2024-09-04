@@ -90,11 +90,12 @@ public class KafkaSinkTask extends SinkTask {
                 if (record.value() != null) {
                     try {
                         String value = record.value().toString();
+                        String key = record.key() != null ? record.key().toString() : null;
                         boolean samplingCondition = Math.random() < samplingPercentage;
                         if (samplingCondition
                                 && isFilteringMatch(value)
                         ) {
-                            sendRecord(value);
+                            sendRecord(key,value);
                         }
                     } catch (Exception e) {
                         log.error(e.getMessage() + " / " + connectorName, e);
@@ -106,8 +107,9 @@ public class KafkaSinkTask extends SinkTask {
                 if (record.value() != null) {
                     try {
                         String value = record.value().toString();
+                        String key = record.key() != null ? record.key().toString() : null;
                         if (isFilteringMatch(value)) {
-                            sendRecord(value);
+                            sendRecord(key,value);
                         }
                     } catch (Exception e) {
                         log.error(e.getMessage() + " / " + connectorName, e);
@@ -117,13 +119,14 @@ public class KafkaSinkTask extends SinkTask {
         }
     }
 
-    private void sendRecord(String value) {
-        ProducerRecord<String, String> sendRecord = getSinkRecord(value);
+    private void sendRecord(String key , String value) {
+        ProducerRecord<String, String> sendRecord = getSinkRecord(key,value);
         producer.send(sendRecord, new ProducerCallback());
     }
 
-    private ProducerRecord<String, String> getSinkRecord(String value) {
-        String messageKey = keyParsingEnabled ? parsingMessageKey(value) : null;
+    private ProducerRecord<String, String> getSinkRecord(String key , String value) {
+        String messageKey = (keyParsingEnabled && key == null) ? parsingMessageKey(value) : key;
+
         if (timestampParsingEnabled) {
             return new ProducerRecord<>(sinkTopic, null, parsingTimestamp(value), messageKey, value);
         } else {
